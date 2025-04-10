@@ -22,14 +22,19 @@ export interface ImageLoadResult {
  * @returns A promise that resolves to an ImageLoadResult object.
  */
 export async function loadImage(imageUrl: string): Promise<ImageLoadResult> {
-  // TODO: Implement the image loading logic here.
-  // This should attempt to load the image from the given URL.
-  // If successful, return { success: true, imageUrl: imageUrl }.
-  // If it fails, return { success: false, error: 'Error message' }.
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = imageUrl;
 
-  // Stub implementation:
-  return {
-    success: true,
-    imageUrl: 'https://via.placeholder.com/150'
-  };
+    img.onload = () => {
+      resolve({ success: true, imageUrl: imageUrl });
+    };
+
+    img.onerror = (error) => {
+      resolve({ success: false, error: `Failed to load image from ${imageUrl}: ${error}` });
+    };
+  });
 }
+
+
+    
