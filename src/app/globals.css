@@ -6,6 +6,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+img {
+  image-rendering: auto;
+  filter: contrast(1.05);
+}
+
 @layer base {
   :root {
     --background: 220 3% 96%;
@@ -107,3 +112,4 @@ body {
     transform: rotate(360deg);
   }
 }
+
