@@ -196,7 +196,7 @@ const PhotoGrid = () => {
     setLoading(true);
     const imagePromises = imageUrls.map(url =>
       new Promise<string | null>(resolve => {
-        const img = new Image();
+        const img = new window.Image(); // Use window.Image in the browser context
         img.src = url;
         img.onload = () => resolve(url);
         img.onerror = () => resolve(null);
@@ -267,6 +267,7 @@ const PhotoGrid = () => {
                     width={200} // Keep original width
                     height={300} // Keep original height
                     className="object-cover w-full h-full transform transition-transform duration-500 ease-in-out hover:scale-105"
+                    priority
                   />
                 </div>
               )
