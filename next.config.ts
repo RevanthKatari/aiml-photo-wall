@@ -8,6 +8,16 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'doeresults.gitam.edu',
+        port: '',
+        pathname: '/photo/**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;
