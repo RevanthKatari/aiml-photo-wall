@@ -1,6 +1,6 @@
 'use client';
 
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef} from 'react';
 
 const specificImageIds = [
   "VU21CSEN0300001",
@@ -193,30 +193,7 @@ const PhotoGrid = () => {
   const [failedImages, setFailedImages] = useState<string[]>([]);
   const [shuffledImages, setShuffledImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    const shuffleImages = () => {
-      setShuffledImages(prevImages => {
-        const newImages = [...prevImages];
-        for (let i = newImages.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [newImages[i], newImages[j]] = [newImages[j], newImages[i]];
-        }
-        return newImages;
-      });
-    };
-
-    if (loadedImages.length > 0) {
-      setShuffledImages([...loadedImages]);
-      timeoutId = setInterval(shuffleImages, 5000);
-    }
-
-    return () => {
-      clearInterval(timeoutId);
-    };
-  }, [loadedImages]);
+  const shuffleInterval = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const loadAllImages = async () => {
@@ -251,6 +228,35 @@ const PhotoGrid = () => {
     loadAllImages();
   }, [imageUrls]);
 
+  useEffect(() => {
+      if (loadedImages.length > 0) {
+          setShuffledImages([...loadedImages]);
+      }
+  }, [loadedImages]);
+
+  useEffect(() => {
+    const shuffleImages = () => {
+      setShuffledImages(prevImages => {
+        const newImages = [...prevImages];
+        for (let i = newImages.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [newImages[i], newImages[j]] = [newImages[j], newImages[i]];
+        }
+        return newImages;
+      });
+    };
+
+    if (loadedImages.length > 0) {
+        shuffleInterval.current = setInterval(shuffleImages, 3000);
+    }
+
+    return () => {
+        if (shuffleInterval.current) {
+            clearInterval(shuffleInterval.current);
+        }
+    };
+  }, [loadedImages]);
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center py-6">
       <h1 className="text-3xl font-bold mb-8 text-foreground">AIML Batch Photo Wall</h1>
@@ -262,7 +268,7 @@ const PhotoGrid = () => {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
         {shuffledImages.map((imageUrl) => (
-          <div key={imageUrl} className="relative rounded-md overflow-hidden shadow-md transition-transform duration-300 hover:scale-105">
+          <div key={imageUrl} className="relative rounded-md overflow-hidden shadow-md transition-transform duration-500 transform-origin-center hover:scale-110">
             <img
               src={imageUrl}
               alt={`AIML Student`}
