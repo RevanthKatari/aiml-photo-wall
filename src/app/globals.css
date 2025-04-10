@@ -41,6 +41,7 @@ img {
     --sidebar-accent-foreground: #ffffff;
     --sidebar-border: #444;
     --sidebar-ring: rgba(229, 9, 20, 0.5);
+
   }
 
   .dark {
@@ -89,7 +90,7 @@ img {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border-left-color: var(--primary);
+  border-left-color: var(--primary); /* Corrected spinner border color */
   animation: spin 1s linear infinite;
   margin: 20px auto;
 }
@@ -102,4 +103,21 @@ img {
   100% {
     transform: rotate(360deg);
   }
+}
+
+/* Keyframes for fade-in animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Keyframes for move-in animation */
+@keyframes moveIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Apply the animations to the image containers */
+.image-container {
+  animation: fadeIn 0.5s ease-out, moveIn 0.5s ease-out;
 }

@@ -1,6 +1,7 @@
 'use client';
 
-import {useState, useEffect, useRef} from 'react';
+import {useState, useEffect, useRef, useCallback} from 'react';
+import Image from 'next/image';
 
 const specificImageIds = [
   "VU21CSEN0300001",
@@ -183,99 +184,95 @@ const specificImageIds = [
   "VU21CSEN0300405"
 ];
 
-const generateImageUrls = (): string[] => {
-  return specificImageIds.map(id => `https://doeresults.gitam.edu/photo/img.aspx?id=${id}`);
-};
-
 const PhotoGrid = () => {
-  const [imageUrls] = useState(generateImageUrls());
-  const [loadedImages, setLoadedImages] = useState<string[]>([]);
-  const [failedImages, setFailedImages] = useState<string[]>([]);
-  const [shuffledImages, setShuffledImages] = useState<string[]>([]);
+  const [imageUrls] = useState(specificImageIds.map(id => `https://doeresults.gitam.edu/photo/img.aspx?id=${id}`));
+  const [imageLoadResults, setImageLoadResults] = useState<(string | null)[]>([]);
+  const [shuffledImageResults, setShuffledImageResults] = useState<(string | null)[]>([]);
   const [loading, setLoading] = useState(true);
   const shuffleInterval = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    const loadAllImages = async () => {
-      const loaded: string[] = [];
-      const failed: string[] = [];
+  // Preload images and store their load results
+  const preloadImages = useCallback(async () => {
+    setLoading(true);
+    const imagePromises = imageUrls.map(url =>
+      new Promise<string | null>(resolve => {
+        const img = new Image();
+        img.src = url;
+        img.onload = () => resolve(url);
+        img.onerror = () => resolve(null);
+      })
+    );
 
-      await Promise.all(
-        imageUrls.map(async (url) => {
-          try {
-            await new Promise<void>((resolve, reject) => {
-              const img = new Image();
-              img.src = url;
-              img.onload = () => {
-                loaded.push(url);
-                resolve();
-              };
-              img.onerror = () => {
-                failed.push(url);
-                resolve(); // Resolve instead of reject so Promise.all doesn't fail
-              };
-            });
-          } catch (e) {
-            failed.push(url);
-          }
-        })
-      );
-      setLoadedImages(loaded);
-      setFailedImages(failed);
-      setLoading(false);
-    };
-
-    loadAllImages();
+    const results = await Promise.all(imagePromises);
+    setImageLoadResults(results);
+    setLoading(false);
   }, [imageUrls]);
 
   useEffect(() => {
-      if (loadedImages.length > 0) {
-          setShuffledImages([...loadedImages]);
-      }
-  }, [loadedImages]);
+    preloadImages();
+  }, [preloadImages]);
 
+  // Shuffle images after they are loaded
+  useEffect(() => {
+    if (imageLoadResults.length > 0) {
+      // Filter out null (failed) image URLs
+      setShuffledImageResults([...imageLoadResults.filter(url => url !== null)]);
+    }
+  }, [imageLoadResults]);
+
+  // Shuffle the images at a set interval
   useEffect(() => {
     const shuffleImages = () => {
-      setShuffledImages(prevImages => {
-        const newImages = [...prevImages];
-        for (let i = newImages.length - 1; i > 0; i--) {
+      setShuffledImageResults(prevImages => {
+        const validImages = [...prevImages];
+        for (let i = validImages.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
-          [newImages[i], newImages[j]] = [newImages[j], newImages[i]];
+          [validImages[i], validImages[j]] = [validImages[j], validImages[i]];
         }
-        return newImages;
+        return validImages;
       });
     };
 
-    if (loadedImages.length > 0) {
-        shuffleInterval.current = setInterval(shuffleImages, 3000);
+    if (imageLoadResults.length > 0) {
+      shuffleInterval.current = setInterval(shuffleImages, 3000);
     }
 
     return () => {
-        if (shuffleInterval.current) {
-            clearInterval(shuffleInterval.current);
-        }
+      if (shuffleInterval.current) {
+        clearInterval(shuffleInterval.current);
+      }
     };
-  }, [loadedImages]);
+  }, [imageLoadResults]);
+
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center py-6">
-      <h1 className="text-3xl font-bold mb-8 text-foreground">AIML Batch Photo Wall</h1>
+    <div className="relative min-h-screen bg-gradient-to-b from-[#141414] to-[#000000] overflow-hidden">
+      {/* Subtle "We Are AIML 2025" banner */}
+      <div className="absolute top-2 left-2">
+        <span className="text-sm text-gray-500">We Are AIML 2025</span>
+      </div>
 
-      {loading && (
-        <div className="spinner">
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        {shuffledImages.map((imageUrl) => (
-          <div key={imageUrl} className="relative rounded-md overflow-hidden shadow-md transition-transform duration-500 transform-origin-center hover:scale-110">
-            <img
-              src={imageUrl}
-              alt={`AIML Student`}
-              className="object-cover w-full h-48"
-            />
+      <div className="absolute inset-0 flex items-center justify-center">
+        {loading ? (
+          <div className="spinner">
           </div>
-        ))}
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-0.5">
+            {shuffledImageResults.map((imageUrl, index) => (
+              imageUrl && (
+                <div key={imageUrl} className="relative overflow-hidden rounded-md shadow-md" style={{ aspectRatio: '200/300' }}>
+                  <Image
+                    src={imageUrl}
+                    alt={`AIML Student ${index + 1}`}
+                    width={200} // Keep original width
+                    height={300} // Keep original height
+                    className="object-cover w-full h-full transform transition-transform duration-500 ease-in-out hover:scale-105"
+                  />
+                </div>
+              )
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
